@@ -5,15 +5,35 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.knightbyte.wordle.repository.WordListRepo
 import com.knightbyte.wordle.utils.CUSTOM_CHECK_DEBUG_LOG
+import com.knightbyte.wordle.utils.Resource
 import com.knightbyte.wordle.utils.WordleStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 @HiltViewModel
-class WordleViewModel @Inject constructor() : ViewModel() {
+class WordleViewModel @Inject constructor(
+    private  val wordListRepo: WordListRepo
+) : ViewModel() {
 
+    val won = mutableStateOf(false)
+    var level = 1
+    val word :MutableState<Resource<String>>  = mutableStateOf(Resource.Empty())
+
+    init {
+        getWord()
+    }
+
+    fun getWord(){
+        word.value = Resource.Loading()
+        viewModelScope.launch {
+            word.value = wordListRepo.getWord()
+        }
+    }
     private val _userGrid = mutableStateListOf<List<WordleStatus>>(
 
         listOf(
@@ -105,9 +125,6 @@ class WordleViewModel @Inject constructor() : ViewModel() {
     private val userPositionCol = mutableStateOf(0)
     private val userRowPosition = mutableStateOf(0)
 
-    val won = mutableStateOf(false)
-    var level = 1
-    private val word = "apple"
 
     fun updateBoxValue(character: String) {
         if(won.value) return
@@ -130,8 +147,8 @@ class WordleViewModel @Inject constructor() : ViewModel() {
             userGrid[userRowPosition.value] = tempList.mapIndexed { index, wordleStatus ->
                 val character = wordleStatus.character.lowercase()
 
-                val returnData = if (word[index].toString() != character) {
-                    if (character in word) {
+                val returnData = if (word.value.data?.get(index).toString() != character) {
+                    if (character in word.value.data!!) {
                         WordleStatus.Partial(wordleStatus.character)
                     } else {
                         WordleStatus.InCorrect(wordleStatus.character)
@@ -155,7 +172,7 @@ class WordleViewModel @Inject constructor() : ViewModel() {
 
     }
 
-    fun updateKeyboard() {
+    private fun updateKeyboard() {
         if(won.value) return
         val tempKeys = userKeys.value
         val userEntered = userGrid[userRowPosition.value]
@@ -164,7 +181,7 @@ class WordleViewModel @Inject constructor() : ViewModel() {
                 var returnData = key
                 userEntered.forEach {
                     if (it.character == key.character) {
-                        Log.d(CUSTOM_CHECK_DEBUG_LOG,"ENTERED JERE ${key.character}")
+                        Log.d(CUSTOM_CHECK_DEBUG_LOG,"ENTERED HERE ${key.character}")
                         returnData = it
                     }
                 }
@@ -178,6 +195,7 @@ class WordleViewModel @Inject constructor() : ViewModel() {
     }
 
     fun backspace(){
+        if(won.value || userRowPosition.value>5) return
         if (userPositionCol.value>=0) {
             val tempData = userGrid[userRowPosition.value].toMutableList()
             tempData[userPositionCol.value] = WordleStatus.Empty()

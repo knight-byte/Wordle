@@ -82,4 +82,10 @@ dependencies {
 
     def ui_controller_version="0.22.0-rc"
     implementation "com.google.accompanist:accompanist-systemuicontroller:$ui_controller_version"
+
+    def retrofit_version = "2.9.0"
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation "com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.2"
+    implementation 'com.google.code.gson:gson:2.8.7'
 }
