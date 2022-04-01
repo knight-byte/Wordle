@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.knightbyte.wordle.presentation.components.UserKeyboard
 import com.knightbyte.wordle.presentation.components.WordleGrid
 import com.knightbyte.wordle.presentation.ui.theme.MyBlack
+import com.knightbyte.wordle.presentation.ui.theme.MyGray
 import com.knightbyte.wordle.presentation.ui.theme.MyLightGray
 import com.knightbyte.wordle.presentation.ui.theme.MyWhite
 import com.knightbyte.wordle.presentation.viewmodel.WordleViewModel
@@ -101,6 +102,34 @@ fun HomeScreen(
                                 style = TextStyle(
                                     textAlign = TextAlign.Center,
                                     color = MyBlack,
+                                    fontSize = 20.sp
+
+                                )
+                            )
+                        }
+                        if (wordleViewModel.gameOver.value) {
+                            Text(
+                                text = "You Loss! : ${wordleViewModel.word.value.data}",
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TextStyle(
+                                    textAlign = TextAlign.Center,
+                                    color = MyBlack,
+                                    fontSize = 20.sp
+
+                                )
+                            )
+
+                        }
+                        if(wordleViewModel.gameOver.value|| wordleViewModel.won.value){
+                            Text(
+                                text = "New Game",
+                                modifier = Modifier.fillMaxWidth()
+                                    .clickable(onClick = {
+                                        wordleViewModel.getWord()
+                                    }),
+                                style = TextStyle(
+                                    textAlign = TextAlign.Center,
+                                    color = MyGray,
                                     fontSize = 20.sp
 
                                 )

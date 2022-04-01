@@ -23,17 +23,13 @@ class WordleViewModel @Inject constructor(
     val won = mutableStateOf(false)
     var level = 1
     val word :MutableState<Resource<String>>  = mutableStateOf(Resource.Empty())
+    val gameOver:MutableState<Boolean> = mutableStateOf(false)
 
     init {
         getWord()
     }
 
-    fun getWord(){
-        word.value = Resource.Loading()
-        viewModelScope.launch {
-            word.value = wordListRepo.getWord()
-        }
-    }
+
     private val _userGrid = mutableStateListOf<List<WordleStatus>>(
 
         listOf(
@@ -120,11 +116,46 @@ class WordleViewModel @Inject constructor(
 
             )
     )
-    val userGrid = _userGrid
-    val userKeys = _userKeyboard
-    private val userPositionCol = mutableStateOf(0)
-    private val userRowPosition = mutableStateOf(0)
 
+    private fun resetGrid(){
+        for (i in 0..5) {
+            val tempList = userGrid[i].toMutableList()
+            userGrid[i] = tempList.map{
+                WordleStatus.Empty()
+            }
+        }
+    }
+
+    private  fun resetKeyboard(){
+        for (i in 0..3) {
+            val tempKeys = userKeys.value
+            userKeys.value = tempKeys.mapIndexed { _, keys ->
+                val data = keys.map { key ->
+                    WordleStatus.Input(key.character)
+                }
+                data
+
+            }
+        }
+    }
+
+    var userGrid = _userGrid
+    var userKeys = _userKeyboard
+    private var userPositionCol = mutableStateOf(0)
+    private var userRowPosition = mutableStateOf(0)
+    fun getWord(){
+        word.value = Resource.Loading()
+        viewModelScope.launch {
+            word.value = wordListRepo.getWord()
+            userKeys.value = _userKeyboard.value
+            resetGrid()
+            resetKeyboard()
+            won.value = false
+            gameOver.value = false
+            userPositionCol.value = 0
+            userRowPosition.value =0
+        }
+    }
 
     fun updateBoxValue(character: String) {
         if(won.value) return
@@ -138,9 +169,8 @@ class WordleViewModel @Inject constructor(
             }
         }
     }
-
     fun updateGrid() {
-        if(won.value) return
+        if(won.value || gameOver.value) return
         if (userPositionCol.value >= 4 && userRowPosition.value < 6) {
             var count = 0
             val tempList = userGrid[userRowPosition.value].toMutableList()
@@ -166,6 +196,9 @@ class WordleViewModel @Inject constructor(
                 level = userRowPosition.value
             }
             userRowPosition.value = userRowPosition.value + 1
+            if(userRowPosition.value>5){
+                gameOver.value = true
+            }
             userPositionCol.value = 0
         }
 
@@ -173,7 +206,7 @@ class WordleViewModel @Inject constructor(
     }
 
     private fun updateKeyboard() {
-        if(won.value) return
+        if(won.value || gameOver.value) return
         val tempKeys = userKeys.value
         val userEntered = userGrid[userRowPosition.value]
         userKeys.value = tempKeys.mapIndexed { _, keys ->
@@ -195,7 +228,7 @@ class WordleViewModel @Inject constructor(
     }
 
     fun backspace(){
-        if(won.value || userRowPosition.value>5) return
+        if(won.value || gameOver.value || userRowPosition.value>5) return
         if (userPositionCol.value>=0) {
             val tempData = userGrid[userRowPosition.value].toMutableList()
             tempData[userPositionCol.value] = WordleStatus.Empty()
